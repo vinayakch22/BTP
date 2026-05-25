@@ -17,3 +17,17 @@ __pycache__/
 
 # Ignore log files
 *.log
+
+# OS-specific files
+.DS_Store
+Thumbs.db
+
+# IDE configuration files
+.vscode/
+.idea/
+
+# Virtual environment folders
+venv/
+env/
+.venv/
+.conda/

@@ -33,7 +33,7 @@ parser.add_argument('--gae_n_dec_2', type=int, default=256)
 parser.add_argument('--gae_n_dec_3', type=int, default=128)
 
 
-##节点表示的参数
+## Node representation parameters
 parser.add_argument('--char_dim', type=int, default=64, help='embedding_dim')
 parser.add_argument('--conv', type=int, default=40, help='conv')
 parser.add_argument('--drug_kernel', type=list, default=[4, 6, 8], help='drug_kernel')

@@ -40,3 +40,11 @@ parser.add_argument('--drug_kernel', type=list, default=[4, 6, 8], help='drug_ke
 parser.add_argument('--protein_kernel', type=int, default=[4, 8, 12], help='protein_kernel')
 
 args = parser.parse_args()
+
+# Validation checks for argument bounds
+if args.epochs <= 0:
+    raise ValueError("Number of epochs must be greater than 0")
+if args.lr <= 0:
+    raise ValueError("Learning rate must be positive")
+if args.n_z <= 0:
+    raise ValueError("Latent dimension n_z must be positive")

@@ -6,7 +6,7 @@ import torch.nn.functional as F
 from torch.nn import Module, Parameter
 from torch_geometric.nn import GATConv
 
-device = torch.device('cuda:0')
+# device = torch.device('cuda:0') # unused globally
 # AE encoder from DFCN
 class AE_encoder(nn.Module):
     def __init__(self, ae_n_enc_1, ae_n_enc_2, ae_n_enc_3, n_input, n_z):
@@ -161,7 +161,7 @@ class H2GNN(nn.Module):
             n_input=opt.args.n_input)
         
         self.gat_refine = GATConv(opt.args.n_z, opt.args.n_z, heads=4, concat=False, dropout=dropout)
-        self.linear = torch.nn.Linear(opt.args.n_input, 1)
+        # self.linear = torch.nn.Linear(opt.args.n_input, 1) # unused
         self.dropout = dropout
         self.gamma = 0.7
 

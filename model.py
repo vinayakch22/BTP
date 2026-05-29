@@ -9,6 +9,7 @@ from torch_geometric.nn import GATConv
 # device = torch.device('cuda:0') # unused globally
 # AE encoder from DFCN
 class AE_encoder(nn.Module):
+    """AutoEncoder Encoder for capturing structural representations from node features."""
     def __init__(self, ae_n_enc_1, ae_n_enc_2, ae_n_enc_3, n_input, n_z):
         super(AE_encoder, self).__init__()
         self.enc_1 = Linear(n_input, ae_n_enc_1)  ##(160,128)
@@ -27,6 +28,7 @@ class AE_encoder(nn.Module):
 
 # AE decoder from DFCN
 class AE_decoder(nn.Module):
+    """AutoEncoder Decoder for reconstructing features from latent representation."""
     def __init__(self, ae_n_dec_1, ae_n_dec_2, ae_n_dec_3, n_input, n_z):
         super(AE_decoder, self).__init__()
 
@@ -85,6 +87,7 @@ class GNNLayer(Module):
 
 # IGAE encoder from DFCN
 class IGAE_encoder(nn.Module):
+    """Improved Graph AutoEncoder Encoder for capturing topological graph information."""
     def __init__(self, gae_n_enc_1, gae_n_enc_2, gae_n_enc_3, n_input):
         super(IGAE_encoder, self).__init__()
         self.gnn_1 = GNNLayer(n_input, gae_n_enc_1)

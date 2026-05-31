@@ -79,11 +79,11 @@ def one_of_k_encoding_unk(x, allowable_set):
 def smile_to_graph(smile):
     mol = Chem.MolFromSmiles(smile)
 
-    c_size = mol.GetNumAtoms()  ##一个药物字符串中原子的数量
+    c_size = mol.GetNumAtoms()  # Number of atoms in a drug SMILES string
 
     features = []
     for atom in mol.GetAtoms():
-        feature = atom_features(atom)  ##78个原子特征
+        feature = atom_features(atom)  # 78 atom features
         features.append(feature / sum(feature))
 
     edges = []
@@ -125,7 +125,7 @@ def process(data_new,nb_drugs,nb_proteins,dataset, foldcount=5,setting = 2):
     print(len(neg_edge))
     alledges = np.concatenate([pos_edge, neg_edge], axis=0)
 
-    ##构建蛋白质字典
+    # Build protein dictionary
     pro_dict = {}
     for key in proteinid:
         value = list(set([j[4] for j in data_new if key == j[1]]))[0]
@@ -153,7 +153,7 @@ def process(data_new,nb_drugs,nb_proteins,dataset, foldcount=5,setting = 2):
         contact_list.append(os.path.join(contac_path, key + '.npy'))
 
     target_graph = {}
-    ##无重复的字符串列表   将蛋白质变成数字标签
+    # Map protein key to numeric label
     for key in target_key:
         g = target_to_graph(key, pro_dict[key], contac_path, msa_path)
         target_graph[key] = g
@@ -163,7 +163,7 @@ def process(data_new,nb_drugs,nb_proteins,dataset, foldcount=5,setting = 2):
     protein1 = DTADataset(len_proteins=nb_proteins, target_key=target_key, target_graph=target_graph)
     protein_set = Data.DataLoader(dataset=protein1, collate_fn=collate2, batch_size=nb_proteins, shuffle=False)
 
-    ##划分训练集和测试集
+    # Split training and testing sets
     # setting1 new-drug
     if setting == 1:
         print('------------setting1 new-drug-----------------')
@@ -204,15 +204,15 @@ def process(data_new,nb_drugs,nb_proteins,dataset, foldcount=5,setting = 2):
         train = np.array(pairs_list)
         test = np.array(pairs_test)
 
-    train[:, 1] -= nb_drugs  ##减去药物的数量，才是真正的蛋白质的序号
-    test[:, 1] -= nb_drugs
+    train[:, 1] -= nb_drugs  # Subtract drug count to get protein indices
+    test[:, 1] -= nb_drugs  # Subtract drug count to get protein indices
     train_mask = coo_matrix((np.ones(train.shape[0], dtype=bool), (train[:, 0], train[:, 1])),
                             shape=(nb_drugs, nb_proteins)).toarray()
     test_mask = coo_matrix((np.ones(test.shape[0], dtype=bool), (test[:, 0], test[:, 1])),
                            shape=(nb_drugs, nb_proteins)).toarray()
-    train_mask = torch.from_numpy(train_mask).view(-1)  ##按顺序展成一维张量
-    test_mask = torch.from_numpy(test_mask).view(-1)
-    ##构造标签label
+    train_mask = torch.from_numpy(train_mask).view(-1)  # Flatten to 1D tensor
+    test_mask = torch.from_numpy(test_mask).view(-1)  # Flatten to 1D tensor
+    # Construct interaction label tensor
 
     pos_edge = allpairs[allpairs[:, 2] == 1, 0:2]
     neg_edge = allpairs[allpairs[:, 2] == 0, 0:2]
@@ -224,7 +224,7 @@ def process(data_new,nb_drugs,nb_proteins,dataset, foldcount=5,setting = 2):
     label_pos = torch.from_numpy(label_pos).type(torch.FloatTensor).view(-1)
     # labels = torch.LongTensor(np.where(label_pos)[1])
 
-    ## 构造邻接矩阵 build graph
+    # Build graph adjacency matrix
     nb_all = nb_drugs+nb_proteins
     train_edge = allpairs[allpairs[:, 2] == 1, 0:2]
 

@@ -96,8 +96,9 @@ def one_of_k_encoding(x, allowable_set):
 def PSSM_calculation(aln_file, pro_seq):
     pfm_mat = np.zeros((len(pro_res_table), len(pro_seq)))
     with open(aln_file, 'r') as f:
-        line_count = len(f.readlines())
-        for line in f.readlines():
+        lines = f.readlines()
+        line_count = len(lines)
+        for line in lines:
             if len(line) != len(pro_seq):
                 print('error', len(line), len(pro_seq))
                 continue

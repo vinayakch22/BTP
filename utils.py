@@ -4,6 +4,7 @@ import numpy as np
 from sklearn.metrics import roc_auc_score,precision_recall_curve,accuracy_score
 
 def metrics_graph(yt, yp):
+    """Evaluate DTI model prediction performance using AUC, AUPR, F1, and accuracy metrics."""
     precision, recall, _, = precision_recall_curve(yt, yp)
     aupr = -np.trapz(precision, recall)
     auc = roc_auc_score(yt, yp)
@@ -40,12 +41,14 @@ def metrics_graph(yt, yp):
 
 
 def adjust_learning_rate(optimizer, epoch):
+    """Adjust learning rate exponentially every 50 epochs."""
     lr = 0.001 * (0.1 ** (epoch // 50))
     for param_group in optimizer.param_groups:
         param_group['lr'] = lr
 
 
 def setup_seed(seed):
+    """Set random seed for reproducibility across torch, numpy, and random libraries."""
     torch.manual_seed(seed)
     torch.cuda.manual_seed(seed)
     torch.cuda.manual_seed_all(seed)

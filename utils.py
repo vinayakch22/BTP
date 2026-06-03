@@ -40,14 +40,14 @@ def metrics_graph(yt, yp):
     return auc, aupr, f1_score[0, 0], accuracy[0, 0] #, recall[0, 0], specificity[0, 0], precision[0, 0]
 
 
-def adjust_learning_rate(optimizer, epoch):
+def adjust_learning_rate(optimizer: torch.optim.Optimizer, epoch: int) -> None:
     """Adjust learning rate exponentially every 50 epochs."""
     lr = 0.001 * (0.1 ** (epoch // 50))
     for param_group in optimizer.param_groups:
         param_group['lr'] = lr
 
 
-def setup_seed(seed):
+def setup_seed(seed: int) -> None:
     """Set random seed for reproducibility across torch, numpy, and random libraries."""
     torch.manual_seed(seed)
     torch.cuda.manual_seed(seed)

@@ -1,3 +1,6 @@
+"""
+Dataset loader and pre-processing utilities for H2GnnDTI model training.
+"""
 import torch
 import random
 import numpy as np
@@ -17,6 +20,7 @@ def shuffle_dataset(dataset, seed):
     return dataset
 
 def dataload(DATASET):
+    """Load raw dataset text file containing interactions, drugs, and protein targets."""
     print("Train in " + DATASET)
     weight_CE = None
     dir_input = ('./dataset/{}.txt'.format(DATASET))

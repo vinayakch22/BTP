@@ -103,6 +103,6 @@ class DTADataset(InMemoryDataset):
 
 #prepare the protein and drug pairs
 def collate2(data_list):
-    # batchA = Batch.from_data_list([data[0] for data in data_list])  ##这里应该是每个药物的长度
+    # batchA = Batch.from_data_list([data[0] for data in data_list])  # The drug dataset batch collator
     batchB = Batch.from_data_list([data for data in data_list])
     return batchB

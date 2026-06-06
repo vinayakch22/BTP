@@ -106,3 +106,5 @@ def collate2(data_list):
     # batchA = Batch.from_data_list([data[0] for data in data_list])  # The drug dataset batch collator
     batchB = Batch.from_data_list([data for data in data_list])
     return batchB
+
+# End of graphset.py dataset definitions

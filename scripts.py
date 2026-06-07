@@ -20,7 +20,7 @@ def seq_format(proteins_dic, output_dir):
 def HHblitsMSA(bin_path, db_path, input_dir, output_dir):
     for fas_file in os.listdir(input_dir):
         process_file = os.path.join(input_dir, fas_file)
-        output_file = os.path.join(output_dir, fas_file.split('.fasta')[0] + '.hhr')  # igore
+        output_file = os.path.join(output_dir, fas_file.split('.fasta')[0] + '.hhr')  # ignore output
         output_file_a3m = os.path.join(output_dir, fas_file.split('.fasta')[0] + '.a3m')
         if os.path.exists(output_file) and os.path.exists(output_file_a3m):
             # print(output_file, output_file_a3m, 'exist.')

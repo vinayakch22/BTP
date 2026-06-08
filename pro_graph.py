@@ -16,6 +16,7 @@ from utils import *
 
 # nomarlize
 def dic_normalize(dic):
+    """Min-Max normalization of dictionary values representing biochemical properties of amino acids."""
     # print(dic)
     max_value = dic[max(dic, key=dic.get)]
     min_value = dic[min(dic, key=dic.get)]
@@ -117,6 +118,7 @@ def PSSM_calculation(aln_file, pro_seq):
 
 
 def seq_feature(pro_seq):
+    """Create residue property matrices for target protein sequence."""
     pro_hot = np.zeros((len(pro_seq), len(pro_res_table)))
     pro_property = np.zeros((len(pro_seq), 12))
     for i in range(len(pro_seq)):

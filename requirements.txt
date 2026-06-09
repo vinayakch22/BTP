@@ -1,0 +1,10 @@
+torch>=2.0.1
+torch-geometric>=2.3.0
+rdkit
+networkx
+scikit-learn
+scipy
+tqdm
+numpy
+matplotlib
+captum

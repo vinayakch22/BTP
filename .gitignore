@@ -1,0 +1,6 @@
+# Ignore the extracted dataset directory
+dataset/
+
+# Ignore the large Google Drive dataset directory and ZIP file
+data/
+data.zip

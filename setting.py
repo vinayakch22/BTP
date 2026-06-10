@@ -141,8 +141,8 @@ def process(data_new,nb_drugs,nb_proteins,dataset, foldcount=5,setting = 2):
     nb_proteins = len(proteinid)
 
     # ----cell line_feature_input   379个蛋白质
-    msa_path = 'C:/Users/Rithika/OneDrive/Desktop/H2GnnDTI/data/' + dataset + '/aln'
-    contac_path = 'C:/Users/Rithika/OneDrive/Desktop/H2GnnDTI/data/' + dataset + '/pconsc4'
+    msa_path = 'data/' + dataset + '/aln'
+    contac_path = 'data/' + dataset + '/pconsc4'
     # msa_path = '/home/datasets/data_pro/' + dataset + '/aln'
     # contac_path = '/home/datasets/data_pro/' + dataset + '/pconsc4'
     msa_list = []

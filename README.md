@@ -284,6 +284,48 @@ python main.py --epochs 300 --lr 5e-4
 
 ---
 
+## Explainability Pipelines
+
+The project contains two explainability scripts to analyze the model's representations and predictions using Captum's Integrated Gradients:
+
+### 1. Low-Level GAT Explainability (`explainability_lowlevel.py`)
+
+This pipeline computes feature attributions for the structural encoders of drug molecules and protein residue sequences.
+
+* **Command to Run**:
+  ```bash
+  C:\Users\vinay\AppData\Local\Programs\Python\Python38\python.exe explainability_lowlevel.py
+  ```
+* **What it does**:
+  * Attributes GNNNet embedding strength back to input atom features (for drug SMILES) and residue features (for protein sequences).
+  * Selects 100 interaction pairs (50 positive, 50 negative) from the dataset.
+* **Output files (saved to `results/explainability_lowlevel/`)**:
+  * 100 individual drug atom attribution bar charts and RDKit molecule SVGs.
+  * 100 protein residue attribution contact map charts.
+  * Global summary charts: `global_attribution_distributions.png` and `global_predictions.png`.
+  * Raw attribution results: `all_results.pt`.
+
+### 2. Prediction-Level Explainability (`explainability_prediction.py`)
+
+This pipeline explains the final interaction predictions across five different levels, bypassing the gradient dilution from the self-attention layer.
+
+* **Command to Run**:
+  ```bash
+  C:\Users\vinay\AppData\Local\Programs\Python\Python38\python.exe explainability_prediction.py
+  ```
+* **What it does**:
+  * **Level 1**: Attention Analysis (alpha gate values, self-attention scores, GAT refinement weights).
+  * **Level 2**: Decoder Attribution (analytical gradient of predicted probability w.r.t the decoder output `z_hat`).
+  * **Level 3**: Fused Latent Attribution (Integrated Gradients on `z_tilde` through the decoder path).
+  * **Level 4**: AE Feature Attribution (Vectorized IG on input features through the Autoencoder branch).
+  * **Level 5**: IGAE Pair Attribution (IG on input features through the Graph Autoencoder branch).
+* **Output files (saved to `results/explainability_prediction/`)**:
+  * 100 multi-panel images showing the attention gates, analytical attributions, layer IG, and branch attributions side-by-side (e.g. `sample_0_prediction_explainability.png`).
+  * Global summary: `global_prediction_explainability.png` (aggregates prediction distribution, gate dynamics, and branch attribution comparisons).
+  * Raw attribution results: `all_results.pt`.
+
+---
+
 ## File-by-File Description
 
 ### `main.py`

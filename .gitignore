@@ -4,3 +4,16 @@ dataset/
 # Ignore the large Google Drive dataset directory and ZIP file
 data/
 data.zip
+
+# Ignore model and data checkpoints
+checkpoints/
+
+# Ignore the explainability analysis results
+results/
+
+# Ignore Python cache
+__pycache__/
+*.pyc
+
+# Ignore log files
+*.log

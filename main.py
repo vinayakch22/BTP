@@ -133,6 +133,30 @@ print('Final_AUC: ' + str(round(final_AUC, 4)) + '  Final_AUPR: ' + str(round(fi
       '  Final_F1: ' + str(round(final_F1, 4)) + '  Final_ACC: ' + str(round(final_ACC, 4)))
 print('---------------------------------------')
 
+# === Save checkpoints for explainability ===
+import os
+os.makedirs('checkpoints', exist_ok=True)
+
+torch.save(node.state_dict(), f'checkpoints/gnnnet_{DATASET}.pt')
+torch.save(model.state_dict(), f'checkpoints/h2gnn_{DATASET}.pt')
+
+# Save graph data and metadata needed for explainability
+torch.save({
+    'data_new': data_new,
+    'nb_drugs': nb_drugs,
+    'nb_proteins': nb_proteins,
+    'nb_all': nb_all,
+    'features': features.cpu(),
+    'adj': adj.cpu(),
+    'labels': labels.cpu(),
+    'idx_train': idx_train.cpu(),
+    'idx_test': idx_test.cpu(),
+    'edge': edge,
+    'dataset': DATASET,
+}, f'checkpoints/data_{DATASET}.pt')
+
+print(f'Checkpoints saved to checkpoints/ for dataset: {DATASET}')
+
 def visualize_alpha(model, features, adj, nb_drugs, nb_all):
     model.eval()
     with torch.no_grad():

@@ -1,3 +1,7 @@
+[![Python](https://img.shields.io/badge/Python-3.8%20%7C%203.9-blue.svg)](https://www.python.org)
+[![PyTorch](https://img.shields.io/badge/PyTorch-%3E%3D2.0.1-orange.svg)](https://pytorch.org)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+
 # H2GnnDTI — Drug-Target Interaction Prediction
 
 A graph neural network model for predicting drug-target interactions (DTI) using heterogeneous graph learning with dynamic fusion of an AutoEncoder (AE) and an Improved Graph AutoEncoder (IGAE).

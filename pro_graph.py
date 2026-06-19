@@ -101,7 +101,7 @@ def PSSM_calculation(aln_file, pro_seq):
         line_count = len(lines)
         for line in lines:
             if len(line) != len(pro_seq):
-                print('error', len(line), len(pro_seq))
+                # print('error', len(line), len(pro_seq))
                 continue
             count = 0
             for res in line:

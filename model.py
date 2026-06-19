@@ -164,7 +164,7 @@ class H2GNN(nn.Module):
             n_input=opt.args.n_input)
         
         self.gat_refine = GATConv(opt.args.n_z, opt.args.n_z, heads=4, concat=False, dropout=dropout)
-        # self.linear = torch.nn.Linear(opt.args.n_input, 1) # unused
+        self.linear = torch.nn.Linear(opt.args.n_input, 1) # unused
         self.dropout = dropout
         self.gamma = 0.7
 

@@ -787,7 +787,7 @@ def main():
     DATASET = "kiba"
     NUM_SAMPLES = 100
     N_STEPS = 50
-    SAVE_DIR = os.path.join('results', 'explainability_prediction')
+    SAVE_DIR = os.path.join('results', 'explainability_highlevel')
     os.makedirs(SAVE_DIR, exist_ok=True)
 
     device = torch.device('cpu')

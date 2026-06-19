@@ -309,13 +309,13 @@ This pipeline computes feature attributions for the structural encoders of drug 
   * Global summary charts: `global_attribution_distributions.png` and `global_predictions.png`.
   * Raw attribution results: `all_results.pt`.
 
-### 2. Prediction-Level Explainability (`explainability_prediction.py`)
+### 2. High-Level / Prediction-Level Explainability (`explainability_highlevel.py`)
 
 This pipeline explains the final interaction predictions across five different levels, bypassing the gradient dilution from the self-attention layer.
 
 * **Command to Run**:
   ```bash
-  C:\Users\vinay\AppData\Local\Programs\Python\Python38\python.exe explainability_prediction.py
+  C:\Users\vinay\AppData\Local\Programs\Python\Python38\python.exe explainability_highlevel.py
   ```
 * **What it does**:
   * **Level 1**: Attention Analysis (alpha gate values, self-attention scores, GAT refinement weights).
@@ -323,7 +323,7 @@ This pipeline explains the final interaction predictions across five different l
   * **Level 3**: Fused Latent Attribution (Integrated Gradients on `z_tilde` through the decoder path).
   * **Level 4**: AE Feature Attribution (Vectorized IG on input features through the Autoencoder branch).
   * **Level 5**: IGAE Pair Attribution (IG on input features through the Graph Autoencoder branch).
-* **Output files (saved to `results/explainability_prediction/`)**:
+* **Output files (saved to `results/explainability_highlevel/`)**:
   * 100 multi-panel images showing the attention gates, analytical attributions, layer IG, and branch attributions side-by-side (e.g. `sample_0_prediction_explainability.png`).
   * Global summary: `global_prediction_explainability.png` (aggregates prediction distribution, gate dynamics, and branch attribution comparisons).
   * Raw attribution results: `all_results.pt`.

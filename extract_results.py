@@ -77,7 +77,7 @@ print(f"Ground truths: unique={set(gts)}, count_0={gts.count(0)}, count_1={gts.c
 # ============================================================
 # PREDICTION-LEVEL RESULTS
 # ============================================================
-pl = torch.load('results/explainability_prediction/all_results.pt', map_location='cpu')
+pl = torch.load('results/explainability_highlevel/all_results.pt', map_location='cpu')
 print(f'\n=== PREDICTION-LEVEL RESULTS ===')
 print(f'Samples: {len(pl)}')
 print(f'Keys: {list(pl[0].keys())}')

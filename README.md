@@ -432,6 +432,25 @@ Validates that IG attributions are deterministic and tests whether positive/nega
   * `stability_distribution_report.txt` — Full statistical summary.
   * `stability_distribution_results.pt` — Raw results.
 
+### 3. Attention & Calibration Validation (`validation_attention.py`)
+
+Validates the high-level attention mechanisms (alpha fusion gate, self-attention) and prediction calibration.
+
+* **Command to Run**:
+  ```bash
+  python validation_attention.py
+  ```
+* **What it does**:
+  * **HL-1 (Alpha Gate)**: Tests whether drug/protein alpha distributions differ, whether positive vs negative pairs have different alpha values (Mann-Whitney U), and correlation between alpha and prediction score (Spearman).
+  * **HL-2 (Self-Attention)**: Computes AUC of using the drug->protein self-attention score as a standalone predictor. Generates ROC curve.
+  * **HL-7 (Calibration)**: Computes AUC, accuracy, and calibration curve (reliability diagram) on the 100-sample subset.
+* **Output files (saved to `results/validation/attention/`)**:
+  * `alpha_distribution_validation.png` — 4-panel violin/scatter plots for alpha analysis.
+  * `self_attention_validation.png` — Histogram, ROC curve, and scatter for self-attention.
+  * `prediction_calibration.png` — Calibration curve, prediction distribution, ROC.
+  * `attention_validation_report.txt` — Full statistical summary.
+  * `attention_validation_results.pt` — Raw results.
+
 ---
 
 ## Troubleshooting

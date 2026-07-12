@@ -391,6 +391,32 @@ Statistical post-processing analysis script that aggregates, summarizes, and pri
 
 ---
 
+## Validation Pipelines
+
+These scripts scientifically validate the reliability of the explainability findings. They use the existing trained model and saved results — no model retraining is required.
+
+### 1. Perturbation Faithfulness Test (`validation_perturbation.py`)
+
+Tests whether the atoms/residues identified as important by Integrated Gradients actually matter for the model's computation.
+
+* **Command to Run**:
+  ```bash
+  python validation_perturbation.py
+  ```
+* **What it does**:
+  * For each of the 100 samples, zeros out the top-K important atoms/residues and recomputes the GNNNet embedding.
+  * Compares the embedding L2-norm change against zeroing random K atoms/residues (averaged over 10 trials).
+  * Drug K values: 3, 5, 10. Protein K values: 5, 10, 20.
+* **Statistical test**: Paired t-test (top-K drop vs random-K drop).
+* **Output files (saved to `results/validation/perturbation/`)**:
+  * `drug_perturbation_faithfulness.png` — Bar chart with significance markers.
+  * `protein_perturbation_faithfulness.png` — Bar chart with significance markers.
+  * `perturbation_scatter.png` — Per-sample top-K vs random-K scatter.
+  * `perturbation_statistics.txt` — Full statistical summary table.
+  * `perturbation_results.pt` — Raw results.
+
+---
+
 ## Troubleshooting
 
 **`FileNotFoundError` for `.aln` or `.npy` files**

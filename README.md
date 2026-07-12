@@ -415,6 +415,23 @@ Tests whether the atoms/residues identified as important by Integrated Gradients
   * `perturbation_statistics.txt` — Full statistical summary table.
   * `perturbation_results.pt` — Raw results.
 
+### 2. Attribution Stability & Distribution Test (`validation_stability.py`)
+
+Validates that IG attributions are deterministic and tests whether positive/negative interaction pairs have different attribution patterns.
+
+* **Command to Run**:
+  ```bash
+  python validation_stability.py
+  ```
+* **What it does**:
+  * **LL-3 (Stability)**: Re-runs IG 5 times on 10 samples. Computes pairwise Spearman rank correlation and Jaccard similarity of top-15 atoms/residues across runs.
+  * **LL-5 (Distribution)**: Compares attribution magnitude, max importance, and entropy between positive (interacting) and negative (non-interacting) pairs using Mann-Whitney U test and Cohen's d effect size.
+* **Output files (saved to `results/validation/stability/`)**:
+  * `stability_test.png` — Box plot of Spearman and Jaccard across samples.
+  * `pos_vs_neg_distributions.png` — 6-panel comparison of attribution statistics.
+  * `stability_distribution_report.txt` — Full statistical summary.
+  * `stability_distribution_results.pt` — Raw results.
+
 ---
 
 ## Troubleshooting

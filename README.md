@@ -451,6 +451,23 @@ Validates the high-level attention mechanisms (alpha fusion gate, self-attention
   * `attention_validation_report.txt` — Full statistical summary.
   * `attention_validation_results.pt` — Raw results.
 
+### 4. Branch Analysis & Feature Consistency (`validation_branches.py`)
+
+Validates that the AE and IGAE branches are complementary and that feature attributions are consistent across samples.
+
+* **Command to Run**:
+  ```bash
+  python validation_branches.py
+  ```
+* **What it does**:
+  * **HL-5 (Branch Analysis)**: Compares total absolute attribution between AE (Level 4) and IGAE (Level 5) branches. Computes per-feature Pearson correlation to check if branches are complementary or redundant. Tests correlation between branch dominance (IGAE/AE ratio) and the fusion gate alpha.
+  * **HL-6 (Feature Consistency)**: Counts how often each of the 160 feature dimensions appears in the top-20 across all 100 samples. Computes Jaccard similarity of top-20 features between pairs of samples sharing the same drug or same protein vs different drugs/proteins.
+* **Output files (saved to `results/validation/branches/`)**:
+  * `branch_analysis.png` — AE vs IGAE scatter, feature correlation histogram, alpha vs ratio.
+  * `feature_consistency.png` — Feature frequency bars, same-drug vs diff-drug Jaccard box plots.
+  * `branches_report.txt` — Full statistical summary.
+  * `branches_validation_results.pt` — Raw results.
+
 ---
 
 ## Troubleshooting

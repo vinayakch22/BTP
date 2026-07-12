@@ -328,6 +328,18 @@ This pipeline explains the final interaction predictions across five different l
   * Global summary: `global_prediction_explainability.png` (aggregates prediction distribution, gate dynamics, and branch attribution comparisons).
   * Raw attribution results: `all_results.pt`.
 
+### 3. Extract Explainability Results (`extract_results.py`)
+
+This script loads the raw Integrated Gradients attributions and gate weights saved by the low-level and high-level explainability pipelines, computes statistics, and outputs them to the console for thesis analysis.
+
+* **Command to Run**:
+  ```bash
+  C:\Users\vinay\AppData\Local\Programs\Python\Python38\python.exe extract_results.py
+  ```
+* **What it does**:
+  * Loads `results/explainability_lowlevel/all_results.pt` and displays stats for drug atom and protein residue attributions.
+  * Loads `results/explainability_highlevel/all_results.pt` and outputs alpha fusion gate statistics, prediction scores, and branch-level importance comparisons.
+
 ---
 
 ## File-by-File Description
@@ -367,6 +379,15 @@ Offline pre-processing utilities for generating the protein `.aln` and `.npy` fi
 
 ### `data_process.py`
 An earlier version of the data processing pipeline (retained for reference). The active pipeline used in `main.py` is `setting.py`.
+
+### `explainability_lowlevel.py`
+Low-level GNN explainability script. Attributes `GNNNet` embeddings back to individual drug atoms/bonds and protein residues/contacts using Captum's Integrated Gradients.
+
+### `explainability_highlevel.py`
+High-level/prediction-level explainability script. Explains final DTI predictions across five levels (attention gates, decoder representations, and branch inputs) using analytical gradients and Integrated Gradients.
+
+### `extract_results.py`
+Statistical post-processing analysis script that aggregates, summarizes, and prints statistical metrics from the saved raw explainability files (`all_results.pt`).
 
 ---
 

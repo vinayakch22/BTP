@@ -468,6 +468,22 @@ Validates that the AE and IGAE branches are complementary and that feature attri
   * `branches_report.txt` — Full statistical summary.
   * `branches_validation_results.pt` — Raw results.
 
+### 5. Pharmacophore Overlap Validation (`validation_pharmacophore.py`)
+
+Checks whether the drug atoms highlighted by Integrated Gradients correspond to known pharmacophoric features (H-bond donors/acceptors, aromatic rings, heteroatoms).
+
+* **Command to Run**:
+  ```bash
+  python validation_pharmacophore.py
+  ```
+* **What it does**:
+  * **LL-4 (Pharmacophore Overlap)**: For each drug molecule, identifies pharmacophoric atoms using RDKit, computes overlap between top-K IG-attributed atoms and pharmacophoric atoms, and compares against a random baseline (100 trials). Tests enrichment with Wilcoxon signed-rank test. Also breaks down hit rates by pharmacophore category (HBD, HBA, aromatic, hydrophobic, heteroatom).
+* **Output files (saved to `results/validation/pharmacophore/`)**:
+  * `pharmacophore_overlap.png` — 4-panel figure with overlap bars, enrichment histogram, category hit rates, and scatter plot.
+  * `pharmacophore_examples.png` — 5 example molecules with color-coded atoms (green=IG+pharma overlap, blue=IG only, orange=pharma only).
+  * `pharmacophore_report.txt` — Full statistical summary.
+  * `pharmacophore_results.pt` — Raw results.
+
 ---
 
 ## Troubleshooting

@@ -501,6 +501,22 @@ Validates that edge (bond/contact) importance scores are internally consistent, 
   * `edge_sanity_report.txt` — Full statistical summary.
   * `edge_sanity_results.pt` — Raw results.
 
+### 7. Decoder Masking & IG Convergence (`validation_decoder_convergence.py`)
+
+Tests whether the top decoder dimensions are genuinely important and whether IG satisfies its completeness axiom.
+
+* **Command to Run**:
+  ```bash
+  python validation_decoder_convergence.py
+  ```
+* **What it does**:
+  * **HL-3 (Decoder Masking)**: Zeros out the top-10 most important z_hat dimensions (from Level 2 attribution) and compares prediction drop vs zeroing random-10 dimensions. Wilcoxon signed-rank test.
+  * **HL-4 (IG Convergence)**: Re-runs Integrated Gradients on 20 samples across Levels 3, 4, and 5 with `return_convergence_delta=True`. Checks if the completeness axiom (sum of attributions = F(input) - F(baseline)) holds.
+* **Output files (saved to `results/validation/decoder_convergence/`)**:
+  * `decoder_convergence.png` — 4-panel figure with masking box plots, scatter, and convergence delta distributions.
+  * `decoder_convergence_report.txt` — Full statistical summary.
+  * `decoder_convergence_results.pt` — Raw results.
+
 ---
 
 ## Troubleshooting

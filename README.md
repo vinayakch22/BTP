@@ -484,6 +484,23 @@ Checks whether the drug atoms highlighted by Integrated Gradients correspond to 
   * `pharmacophore_report.txt` — Full statistical summary.
   * `pharmacophore_results.pt` — Raw results.
 
+### 6. Edge Importance Sanity Check (`validation_edge_sanity.py`)
+
+Validates that edge (bond/contact) importance scores are internally consistent, chemically meaningful, and not simply driven by node degree.
+
+* **Command to Run**:
+  ```bash
+  python validation_edge_sanity.py
+  ```
+* **What it does**:
+  * **Test 1 — Consistency**: Pearson correlation between edge importance and endpoint node importances.
+  * **Test 2 — Bond-Type Discrimination**: Checks if top-10 important bonds preferentially connect heteroatoms (N, O, S) vs random bonds (Mann-Whitney U test).
+  * **Test 3 — Degree Bias**: Spearman correlation between node importance and node degree to verify importance is not just a proxy for connectivity.
+* **Output files (saved to `results/validation/edge_sanity/`)**:
+  * `edge_sanity_check.png` — 6-panel figure with consistency histograms, bond-type box plots, and degree bias analysis.
+  * `edge_sanity_report.txt` — Full statistical summary.
+  * `edge_sanity_results.pt` — Raw results.
+
 ---
 
 ## Troubleshooting

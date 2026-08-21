@@ -48,6 +48,28 @@ def cmask(num, ratio, seed):
     np.random.shuffle(mask)
     return mask
 
+def _as_pair_array(pairs):
+    """Convert a list of pairs to an (N, 2) float array, including N=0."""
+    if len(pairs) == 0:
+        return np.zeros((0, 2), dtype=np.float64)
+    arr = np.array(pairs, dtype=np.float64)
+    if arr.ndim == 1:
+        arr = arr.reshape(-1, 2)
+    return arr
+
+def _pair_set(arr):
+    return set((int(r[0]), int(r[1])) for r in arr)
+
+def _pairs_to_flat_mask(pairs_local, nb_drugs, nb_proteins):
+    """pairs_local: (N, 2) with protein indices in [0, nb_proteins)."""
+    if pairs_local.shape[0] == 0:
+        return torch.zeros(nb_drugs * nb_proteins, dtype=torch.bool)
+    mask = coo_matrix(
+        (np.ones(pairs_local.shape[0], dtype=bool),
+         (pairs_local[:, 0].astype(np.int64), pairs_local[:, 1].astype(np.int64))),
+        shape=(nb_drugs, nb_proteins)).toarray()
+    return torch.from_numpy(mask).view(-1)
+
 # mol atom feature for mol graph
 def atom_features(atom):
     # 44 +11 +11 +11 +1
@@ -163,88 +185,120 @@ def process(data_new,nb_drugs,nb_proteins,dataset, foldcount=5,setting = 2):
     protein1 = DTADataset(len_proteins=nb_proteins, target_key=target_key, target_graph=target_graph)
     protein_set = Data.DataLoader(dataset=protein1, collate_fn=collate2, batch_size=nb_proteins, shuffle=False)
 
-    # Split training and testing sets
-    # setting1 new-drug
+    # Split into train / val / test without mutating the list while iterating.
+    # Last fold = test, second-last fold = val, remaining folds = train.
+    if foldcount < 2:
+        raise ValueError("foldcount must be >= 2 to hold out both val and test folds")
+    val_fold_idx = foldcount - 2
+    test_fold_idx = foldcount - 1
+
+    pairs_train, pairs_val, pairs_test = [], [], []
     if setting == 1:
         print('------------setting1 new-drug-----------------')
         folds = get_random_folds(nb_drugs, foldcount)
-        test_set = folds[4]
-        pairs_list = alledges.tolist()
-        pairs_test = []
-        for x in pairs_list:
-            if x[0] in test_set:
-                pairs_list.remove(x)
+        val_entities = set(folds[val_fold_idx])
+        test_entities = set(folds[test_fold_idx])
+        for x in alledges.tolist():
+            d = int(x[0])
+            if d in test_entities:
                 pairs_test.append(x)
-        train = np.array(pairs_list)
-        test = np.array(pairs_test)
-    if setting == 2:
+            elif d in val_entities:
+                pairs_val.append(x)
+            else:
+                pairs_train.append(x)
+    elif setting == 2:
         print('------------setting2 new-target-----------------')
         folds = get_random_folds(nb_proteins, foldcount)
-        test_set = folds[4]
-        pairs_list = alledges.tolist()
-        pairs_test = []
-        for x in pairs_list:
-            if x[1] - nb_drugs in test_set:
-                pairs_list.remove(x)
+        val_entities = set(folds[val_fold_idx])
+        test_entities = set(folds[test_fold_idx])
+        for x in alledges.tolist():
+            p_local = int(x[1] - nb_drugs)
+            if p_local in test_entities:
                 pairs_test.append(x)
-        train = np.array(pairs_list)
-        test = np.array(pairs_test)
-    if setting == 3:
+            elif p_local in val_entities:
+                pairs_val.append(x)
+            else:
+                pairs_train.append(x)
+    elif setting == 3:
         print('------------setting3 new-dt-----------------')
         folds_drug = get_random_folds(nb_drugs, foldcount)
         folds_protein = get_random_folds(nb_proteins, foldcount)
-        test_set_drug = folds_drug[4]
-        test_set_pro = folds_protein[4]
-        pairs_list = alledges.tolist()
-        pairs_test = []
-        for x in pairs_list:
-            if x[1]-nb_drugs in test_set_pro and x[0] in test_set_drug:
-                pairs_list.remove(x)
+        val_drugs = set(folds_drug[val_fold_idx])
+        test_drugs = set(folds_drug[test_fold_idx])
+        val_proteins = set(folds_protein[val_fold_idx])
+        test_proteins = set(folds_protein[test_fold_idx])
+        for x in alledges.tolist():
+            d = int(x[0])
+            p_local = int(x[1] - nb_drugs)
+            if d in test_drugs and p_local in test_proteins:
                 pairs_test.append(x)
-        train = np.array(pairs_list)
-        test = np.array(pairs_test)
+            elif d in val_drugs and p_local in val_proteins:
+                pairs_val.append(x)
+            else:
+                pairs_train.append(x)
+    else:
+        raise ValueError("Unknown setting: %s (expected 1, 2, or 3)" % setting)
 
-    train[:, 1] -= nb_drugs  # Subtract drug count to get protein indices
-    test[:, 1] -= nb_drugs  # Subtract drug count to get protein indices
-    train_mask = coo_matrix((np.ones(train.shape[0], dtype=bool), (train[:, 0], train[:, 1])),
-                            shape=(nb_drugs, nb_proteins)).toarray()
-    test_mask = coo_matrix((np.ones(test.shape[0], dtype=bool), (test[:, 0], test[:, 1])),
-                           shape=(nb_drugs, nb_proteins)).toarray()
-    train_mask = torch.from_numpy(train_mask).view(-1)  # Flatten to 1D tensor
-    test_mask = torch.from_numpy(test_mask).view(-1)  # Flatten to 1D tensor
-    # Construct interaction label tensor
+    train_global = _as_pair_array(pairs_train)
+    val_global = _as_pair_array(pairs_val)
+    test_global = _as_pair_array(pairs_test)
 
-    pos_edge = allpairs[allpairs[:, 2] == 1, 0:2]
-    neg_edge = allpairs[allpairs[:, 2] == 0, 0:2]
+    train_set = _pair_set(train_global)
+    val_set = _pair_set(val_global)
+    test_set_pairs = _pair_set(test_global)
+    assert train_set.isdisjoint(val_set), "train/val pair overlap"
+    assert train_set.isdisjoint(test_set_pairs), "train/test pair overlap"
+    assert val_set.isdisjoint(test_set_pairs), "val/test pair overlap"
+    print("Split sizes (pairs): train=%d  val=%d  test=%d" % (
+        len(train_global), len(val_global), len(test_global)))
 
-    pos_edge[:, 1] -= nb_drugs
-    neg_edge[:, 1] -= nb_drugs
-    label_pos = coo_matrix((np.ones(pos_edge.shape[0]), (pos_edge[:, 0], pos_edge[:, 1])),
+    train = train_global.copy()
+    val = val_global.copy()
+    test = test_global.copy()
+    train[:, 1] -= nb_drugs
+    val[:, 1] -= nb_drugs
+    test[:, 1] -= nb_drugs
+    train_mask = _pairs_to_flat_mask(train, nb_drugs, nb_proteins)
+    val_mask = _pairs_to_flat_mask(val, nb_drugs, nb_proteins)
+    test_mask = _pairs_to_flat_mask(test, nb_drugs, nb_proteins)
+
+    # Labels: full known-positive matrix (supervision is gated by the masks)
+    pos_edge_local = allpairs[allpairs[:, 2] == 1, 0:2].copy()
+    pos_edge_local[:, 1] -= nb_drugs
+    label_pos = coo_matrix((np.ones(pos_edge_local.shape[0]),
+                            (pos_edge_local[:, 0], pos_edge_local[:, 1])),
                            shape=(nb_drugs, nb_proteins)).toarray()
     label_pos = torch.from_numpy(label_pos).type(torch.FloatTensor).view(-1)
-    # labels = torch.LongTensor(np.where(label_pos)[1])
 
-    # Build graph adjacency matrix
-    nb_all = nb_drugs+nb_proteins
-    train_edge = allpairs[allpairs[:, 2] == 1, 0:2]
-
-    edge = np.vstack((train_edge, train_edge[:, [1, 0]]))  ##交换顺序，还是有相互作用
-    adj = coo_matrix((np.ones(edge.shape[0]), (edge[:, 0], edge[:, 1])),
-                           shape=(nb_all, nb_all), dtype=np.float32)
-    adj = normalize_adj(adj + sp.eye(adj.shape[0]))
-    adj = torch.FloatTensor(np.array(adj.todense()))
+    # High-level graph: TRAIN POSITIVES ONLY (no val/test DTI edges)
+    nb_all = nb_drugs + nb_proteins
+    pos_pair_global = _pair_set(allpairs[allpairs[:, 2] == 1, 0:2])
+    train_pos = _as_pair_array([row for row in train_global
+                                if (int(row[0]), int(row[1])) in pos_pair_global])
+    if train_pos.shape[0] == 0:
+        raise ValueError("No training positive edges; cannot build adjacency")
+    edge = np.vstack((train_pos, train_pos[:, [1, 0]]))
 
     positive_adj = torch.zeros((nb_all, nb_all))
     for inter_k in edge:
-        drug_node_id = int(inter_k[0])
-        protein_node_id = int(inter_k[1])
-        positive_adj[drug_node_id][protein_node_id] = 1
-    sim = pos_transform_adj(nb_all,positive_adj,sample_type='positive',common_neibor = 5)
-    adj1 = positive_adj + sim
+        positive_adj[int(inter_k[0]), int(inter_k[1])] = 1
+
+    # Leakage check: raw adj must not contain val/test positive DTI edges
+    heldout_pos = [row for row in np.vstack((val_global, test_global))
+                   if (int(row[0]), int(row[1])) in pos_pair_global]
+    for row in heldout_pos:
+        d_id, p_id = int(row[0]), int(row[1])
+        assert positive_adj[d_id, p_id].item() == 0, (
+            "val/test positive edge leaked into adjacency: (%d, %d)" % (d_id, p_id))
+        assert positive_adj[p_id, d_id].item() == 0, (
+            "val/test positive reverse edge leaked into adjacency: (%d, %d)" % (p_id, d_id))
+
+    sim = pos_transform_adj(nb_all, positive_adj, sample_type='positive', common_neibor=5)
+    adj1 = (positive_adj + sim).numpy()
     adj1 = normalize_adj(adj1 + np.eye(adj1.shape[0]))
     adj1 = torch.FloatTensor(adj1)
 
-    return drug_set, protein_set, adj1, label_pos, train_mask, test_mask,edge
+    return drug_set, protein_set, adj1, label_pos, train_mask, val_mask, test_mask, edge
 
 
 def pos_transform_adj(node_num, adj, sample_type='positive',common_neibor=3):

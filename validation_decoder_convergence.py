@@ -16,6 +16,7 @@ HL-4: IG Convergence (Completeness Axiom)
   - Small delta = IG is reliable; large delta = numerical issues
 
 Uses saved results + re-runs decoder for masking test.
+Re-run explainability after the leakage-fixed retraining; old all_results.pt files are invalid.
 =================================================================
 """
 

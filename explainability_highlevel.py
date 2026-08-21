@@ -807,6 +807,7 @@ def main():
     features = data_ckpt['features'].to(device)
     adj = data_ckpt['adj'].to(device)
     labels = data_ckpt['labels'].to(device)
+    idx_test = data_ckpt['idx_test']
     print(f"  {nb_drugs} drugs, {nb_proteins} proteins, {nb_all} total")
 
     args = opt.parser.parse_args([])
@@ -816,22 +817,12 @@ def main():
     print("  H2GNN loaded")
     print()
 
-    # --- Build sample list ---
-    from explainability_lowlevel import build_drug_protein_maps, get_interaction_pairs
+    # --- Build sample list from the held-out test set only ---
+    from explainability_lowlevel import build_drug_protein_maps, get_interaction_pairs, select_test_pairs
     drugmap, proteinmap, _, _ = build_drug_protein_maps(data_new)
     all_pairs = get_interaction_pairs(data_new, drugmap, proteinmap)
-    positive_pairs = [p for p in all_pairs if p[4] == 1]
-    negative_pairs = [p for p in all_pairs if p[4] == 0]
-
-    np.random.seed(42)
-    n_pos = min(NUM_SAMPLES // 2, len(positive_pairs))
-    n_neg = min(NUM_SAMPLES - n_pos, len(negative_pairs))
-    selected = (
-        [positive_pairs[i] for i in np.random.choice(len(positive_pairs), n_pos, replace=False)] +
-        [negative_pairs[i] for i in np.random.choice(len(negative_pairs), n_neg, replace=False)]
-    )
-    np.random.shuffle(selected)
-    print(f"  Selected {len(selected)} samples ({n_pos} pos, {n_neg} neg)")
+    selected = select_test_pairs(
+        all_pairs, idx_test, nb_drugs, nb_proteins, num_samples=NUM_SAMPLES, seed=42)
     print()
 
     # --- Run pipeline ---

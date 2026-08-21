@@ -3,12 +3,32 @@ import random
 import numpy as np
 from sklearn.metrics import roc_auc_score,precision_recall_curve,accuracy_score
 
-def metrics_graph(yt, yp):
-    """Evaluate DTI model prediction performance using AUC, AUPR, F1, and accuracy metrics."""
+def metrics_graph(yt, yp, threshold=None):
+    """Evaluate DTI predictions with AUC, AUPR, F1, and accuracy.
+
+    AUC/AUPR are threshold-free. F1 and accuracy use a decision threshold:
+    if ``threshold`` is None it is chosen by max-F1 on *this* set (use on
+    validation only); otherwise that frozen threshold is applied (use on test).
+
+    Returns:
+        auc, aupr, f1, accuracy, threshold
+    """
+    yt = np.asarray(yt).flatten()
+    yp = np.asarray(yp).flatten()
     precision, recall, _, = precision_recall_curve(yt, yp)
     aupr = -np.trapz(precision, recall)
     auc = roc_auc_score(yt, yp)
-    #---f1,acc,recall, specificity, precision
+
+    if threshold is not None:
+        pred = (yp >= float(threshold)).astype(np.float64)
+        tp = np.sum((pred == 1) & (yt == 1))
+        fp = np.sum((pred == 1) & (yt == 0))
+        fn = np.sum((pred == 0) & (yt == 1))
+        tn = np.sum((pred == 0) & (yt == 0))
+        f1 = float(2 * tp / (2 * tp + fp + fn + 1e-12))
+        acc = float((tp + tn) / max(len(yt), 1))
+        return auc, aupr, f1, acc, float(threshold)
+
     real_score=np.mat(yt)
     predict_score=np.mat(yp)
     sorted_predict_score = np.array(sorted(list(set(np.array(predict_score).flatten()))))
@@ -30,14 +50,11 @@ def metrics_graph(yt, yp):
     precision_list = TP / (TP + FP)
     f1_score_list = 2 * TP / (len(real_score.T) + TP - TN)
     accuracy_list = (TP + TN) / len(real_score.T)
-    specificity_list = TN / (TN + FP)
     max_index = np.argmax(f1_score_list)
     f1_score = f1_score_list[max_index]
     accuracy = accuracy_list[max_index]
-    specificity = specificity_list[max_index]
-    recall = recall_list[max_index]
-    precision = precision_list[max_index]
-    return auc, aupr, f1_score[0, 0], accuracy[0, 0] #, recall[0, 0], specificity[0, 0], precision[0, 0]
+    chosen_threshold = float(thresholds[0, max_index])
+    return auc, aupr, f1_score[0, 0], accuracy[0, 0], chosen_threshold
 
 
 def adjust_learning_rate(optimizer: torch.optim.Optimizer, epoch: int) -> None:

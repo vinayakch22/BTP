@@ -491,6 +491,46 @@ def get_interaction_pairs(data_new, drugmap, proteinmap):
     return pairs
 
 
+def select_test_pairs(all_pairs, idx_test, nb_drugs, nb_proteins, num_samples=100, seed=42):
+    """Sample explainability pairs from the held-out test mask only."""
+    if torch.is_tensor(idx_test):
+        test_mask = idx_test.detach().cpu().numpy().astype(bool)
+    else:
+        test_mask = np.asarray(idx_test).astype(bool)
+    test_mask = test_mask.reshape(nb_drugs, nb_proteins)
+
+    test_pairs = [p for p in all_pairs if test_mask[int(p[0]), int(p[1])]]
+    positive_pairs = [p for p in test_pairs if p[4] == 1]
+    negative_pairs = [p for p in test_pairs if p[4] == 0]
+    print(f"  Test pairs available: {len(positive_pairs)} positive, {len(negative_pairs)} negative")
+
+    if len(test_pairs) == 0:
+        raise ValueError("No test pairs available for explainability. Retrain with the leakage-fixed pipeline.")
+
+    np.random.seed(seed)
+    n_pos_target = num_samples // 2
+    n_neg_target = num_samples - n_pos_target
+    if len(positive_pairs) >= n_pos_target and len(negative_pairs) >= n_neg_target:
+        n_pos, n_neg = n_pos_target, n_neg_target
+    else:
+        n_pos = min(n_pos_target, len(positive_pairs))
+        n_neg = min(num_samples - n_pos, len(negative_pairs))
+        leftover = num_samples - n_pos - n_neg
+        extra_pos = min(leftover, max(0, len(positive_pairs) - n_pos))
+        n_pos += extra_pos
+        leftover -= extra_pos
+        n_neg += min(leftover, max(0, len(negative_pairs) - n_neg))
+
+    selected = []
+    if n_pos > 0:
+        selected += [positive_pairs[i] for i in np.random.choice(len(positive_pairs), n_pos, replace=False)]
+    if n_neg > 0:
+        selected += [negative_pairs[i] for i in np.random.choice(len(negative_pairs), n_neg, replace=False)]
+    np.random.shuffle(selected)
+    print(f"  Selected {len(selected)} TEST samples ({n_pos} positive, {n_neg} negative)")
+    return selected
+
+
 # =====================================================================
 # SECTION 5: SINGLE SAMPLE EXPLAINABILITY
 # =====================================================================
@@ -853,28 +893,12 @@ def main():
     print(f"  Loaded H2GNN from {h2gnn_path}")
     print()
 
-    # --- Step 2: Build mappings and select samples ---
-    print("Step 2: Selecting samples...")
+    # --- Step 2: Build mappings and select TEST samples only ---
+    print("Step 2: Selecting samples from the held-out test set...")
     drugmap, proteinmap, drugid_list, proteinid_list = build_drug_protein_maps(data_new)
     all_pairs = get_interaction_pairs(data_new, drugmap, proteinmap)
-
-    # Select a balanced set of samples (mix of positive and negative)
-    positive_pairs = [p for p in all_pairs if p[4] == 1]
-    negative_pairs = [p for p in all_pairs if p[4] == 0]
-
-    np.random.seed(42)
-    n_pos = min(NUM_SAMPLES // 2, len(positive_pairs))
-    n_neg = min(NUM_SAMPLES - n_pos, len(negative_pairs))
-
-    selected_pos = [positive_pairs[i] for i in
-                    np.random.choice(len(positive_pairs), n_pos, replace=False)]
-    selected_neg = [negative_pairs[i] for i in
-                    np.random.choice(len(negative_pairs), n_neg, replace=False)]
-
-    selected_samples = selected_pos + selected_neg
-    np.random.shuffle(selected_samples)
-
-    print(f"  Selected {len(selected_samples)} samples ({n_pos} positive, {n_neg} negative)")
+    selected_samples = select_test_pairs(
+        all_pairs, idx_test, nb_drugs, nb_proteins, num_samples=NUM_SAMPLES, seed=42)
     print()
 
     # --- Step 3: Run explainability on each sample ---

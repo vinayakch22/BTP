@@ -174,7 +174,7 @@ class H2GNN(nn.Module):
         self.fusion_gate = nn.Sequential(
             # Step 1: Project the 40-dim concatenated features into a deeper space
                 nn.Linear(opt.args.n_z * 2, opt.args.n_z * 2),
-                nn.BatchNorm1d(opt.args.n_z * 2), # Keeps training stable
+                nn.LayerNorm(opt.args.n_z * 2),  # per-node; avoids BN stats over held-out entities
                 nn.LeakyReLU(0.2),
                 nn.Dropout(0.2), # Prevents the gate from over-relying on one expert
     

@@ -10,6 +10,7 @@ LL-3: Attribution Stability
 LL-5: Positive vs Negative Attribution Distribution
   - Compare attribution magnitudes between positive and negative pairs.
   - Mann-Whitney U test and effect size (Cohen's d).
+Re-run explainability after the leakage-fixed retraining; old all_results.pt files are invalid.
 =================================================================
 """
 

@@ -12,7 +12,7 @@ HL-6: Feature Consistency Across Samples
   - Count how often each feature dimension appears in top-20.
   - Jaccard similarity of top-20 features between same-drug/protein pairs.
 
-Uses only saved results -- no model re-runs needed.
+Uses saved explainability results. Re-run explainability after the leakage-fixed retraining; old all_results.pt files are invalid.
 =================================================================
 """
 

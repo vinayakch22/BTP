@@ -28,6 +28,7 @@ METHODOLOGY:
      - Random baseline = |Random-K intersect Pharmacophore| / K
      - Enrichment = Overlap ratio / Random baseline
   5. Run across all 100 samples and perform statistical tests.
+Re-run explainability after the leakage-fixed retraining; old all_results.pt files are invalid.
 =================================================================
 """
 

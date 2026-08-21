@@ -41,6 +41,7 @@ OUTPUTS:
     heteroatoms vs random bonds
   - Degree-importance correlation analysis
   - Figures and statistical report
+Re-run explainability after the leakage-fixed retraining; old all_results.pt files are invalid.
 =================================================================
 """
 

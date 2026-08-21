@@ -12,7 +12,7 @@ HL-2: Self-Attention Discriminative Power
   - AUC of self-attention score as standalone predictor
   - Mann-Whitney U between positive vs negative attention scores
 
-Uses only saved results — no model re-runs needed.
+Uses saved explainability results. Re-run explainability after the leakage-fixed retraining; old all_results.pt files are invalid.
 =================================================================
 """
 

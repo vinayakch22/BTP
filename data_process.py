@@ -55,6 +55,26 @@ def cmask(num, ratio, seed):
     np.random.shuffle(mask)
     return mask
 
+def _as_pair_array(pairs):
+    if len(pairs) == 0:
+        return np.zeros((0, 2), dtype=np.float64)
+    arr = np.array(pairs, dtype=np.float64)
+    if arr.ndim == 1:
+        arr = arr.reshape(-1, 2)
+    return arr
+
+def _pair_set(arr):
+    return set((int(r[0]), int(r[1])) for r in arr)
+
+def _pairs_to_flat_mask(pairs_local, nb_drugs, nb_proteins):
+    if pairs_local.shape[0] == 0:
+        return torch.zeros(nb_drugs * nb_proteins, dtype=torch.bool)
+    mask = coo_matrix(
+        (np.ones(pairs_local.shape[0], dtype=bool),
+         (pairs_local[:, 0].astype(np.int64), pairs_local[:, 1].astype(np.int64))),
+        shape=(nb_drugs, nb_proteins)).toarray()
+    return torch.from_numpy(mask).view(-1)
+
 # mol atom feature for mol graph
 def atom_features(atom):
     # 44 +11 +11 +11 +1
@@ -168,66 +188,73 @@ def process(data_new,nb_drugs,nb_proteins,dataset):
     protein1 = DTADataset(len_proteins = nb_proteins, target_key=target_key, target_graph=target_graph)
     protein_set = Data.DataLoader(dataset= protein1,collate_fn=collate2,batch_size=nb_proteins,shuffle=False)
 
-    ##划分训练集和测试集
-    use_independent_testset = True
-    if (use_independent_testset == True):
-        edge_mask = cmask(len(allpairs), 0.2, 666)
-        train = allpairs[edge_mask][:, 0:3]
-        test = allpairs[~edge_mask][:, 0:3]
-    else:
-        CV_edgemask = cmask(len(allpairs), 0.1, 666)
-        cross_validation = allpairs[CV_edgemask][:, 0:3]
-        vali_mask = cmask(len(cross_validation), 0.2, 66)
-        train = cross_validation[vali_mask][:, 0:3]
-        test = cross_validation[~vali_mask][:, 0:3]
-    train[:, 1] -= nb_drugs  ##减去药物的数量，才是真正的蛋白质的序号
+    # Random pair split: 20% test, 20% of remainder as val, rest train.
+    # Pairs are not mutated while iterating (no list.remove).
+    holdout_mask = cmask(len(allpairs), 0.2, 666)  # True = train+val pool
+    pool = allpairs[holdout_mask]
+    test_all = allpairs[~holdout_mask]
+    val_keep = cmask(len(pool), 0.2, 66)  # True = train, False = val
+    train_all = pool[val_keep]
+    val_all = pool[~val_keep]
+
+    train_global = train_all[:, 0:2].copy()
+    val_global = val_all[:, 0:2].copy()
+    test_global = test_all[:, 0:2].copy()
+
+    train_set = _pair_set(train_global)
+    val_set = _pair_set(val_global)
+    test_set_pairs = _pair_set(test_global)
+    assert train_set.isdisjoint(val_set), "train/val pair overlap"
+    assert train_set.isdisjoint(test_set_pairs), "train/test pair overlap"
+    assert val_set.isdisjoint(test_set_pairs), "val/test pair overlap"
+    print("Split sizes (pairs): train=%d  val=%d  test=%d" % (
+        len(train_global), len(val_global), len(test_global)))
+
+    train = train_global.copy()
+    val = val_global.copy()
+    test = test_global.copy()
+    train[:, 1] -= nb_drugs
+    val[:, 1] -= nb_drugs
     test[:, 1] -= nb_drugs
-    train_mask = coo_matrix((np.ones(train.shape[0], dtype=bool), (train[:, 0], train[:, 1])),
-                            shape=(nb_drugs, nb_proteins)).toarray()
-    test_mask = coo_matrix((np.ones(test.shape[0], dtype=bool), (test[:, 0], test[:, 1])),
-                           shape=(nb_drugs, nb_proteins)).toarray()
-    train_mask = torch.from_numpy(train_mask).view(-1)  ##按顺序展成一维张量
-    test_mask = torch.from_numpy(test_mask).view(-1)
-    ##构造标签label
-    if (use_independent_testset == True):
-        pos_edge = allpairs[allpairs[:, 2] == 1, 0:2]
-        neg_edge = allpairs[allpairs[:, 2] == 0, 0:2]
-    else:
-        pos_edge = cross_validation[cross_validation[:, 2] == 1, 0:2]
-        neg_edge = cross_validation[cross_validation[:, 2] == 0, 0:2]
-    pos_edge[:, 1] -= nb_drugs
-    neg_edge[:, 1] -= nb_drugs
-    label_pos = coo_matrix((np.ones(pos_edge.shape[0]), (pos_edge[:, 0], pos_edge[:, 1])),
+    train_mask = _pairs_to_flat_mask(train, nb_drugs, nb_proteins)
+    val_mask = _pairs_to_flat_mask(val, nb_drugs, nb_proteins)
+    test_mask = _pairs_to_flat_mask(test, nb_drugs, nb_proteins)
+
+    pos_edge_local = allpairs[allpairs[:, 2] == 1, 0:2].copy()
+    pos_edge_local[:, 1] -= nb_drugs
+    label_pos = coo_matrix((np.ones(pos_edge_local.shape[0]),
+                            (pos_edge_local[:, 0], pos_edge_local[:, 1])),
                            shape=(nb_drugs, nb_proteins)).toarray()
     label_pos = torch.from_numpy(label_pos).type(torch.FloatTensor).view(-1)
-    # labels = torch.LongTensor(np.where(label_pos)[1])
 
-    ## 构造邻接矩阵 build graph
-    nb_all = nb_drugs+nb_proteins
-    if (use_independent_testset == True):
-        train_edge = allpairs[allpairs[:, 2] == 1, 0:2]
-    else:
-        train_edge = cross_validation[cross_validation[:, 2] == 1, 0:2]
-    edge = np.vstack((train_edge, train_edge[:, [1, 0]]))  ##交换顺序，还是有相互作用
+    # High-level graph: TRAIN POSITIVES ONLY
+    nb_all = nb_drugs + nb_proteins
+    train_pos = train_all[train_all[:, 2] == 1, 0:2]
+    if train_pos.shape[0] == 0:
+        raise ValueError("No training positive edges; cannot build adjacency")
+    edge = np.vstack((train_pos, train_pos[:, [1, 0]]))
 
-    adj = coo_matrix((np.ones(edge.shape[0]), (edge[:, 0], edge[:, 1])),
-                           shape=(nb_all, nb_all), dtype=np.float32)
-    adj = normalize_adj(adj + sp.eye(adj.shape[0]))
-    adj = torch.FloatTensor(np.array(adj.todense()))
-
-    ##原来的邻接矩阵，还没加上药物和蛋白质本身的相似度
     positive_adj = torch.zeros((nb_all, nb_all))
     for inter_k in edge:
-        drug_node_id = int(inter_k[0])
-        protein_node_id = int(inter_k[1])
-        positive_adj[drug_node_id][protein_node_id] = 1
-    sim = pos_transform_adj(nb_all,positive_adj,sample_type='positive',common_neibor = 3)
+        positive_adj[int(inter_k[0]), int(inter_k[1])] = 1
+
+    pos_pair_global = _pair_set(allpairs[allpairs[:, 2] == 1, 0:2])
+    heldout_pos = [row for row in np.vstack((val_global, test_global))
+                   if (int(row[0]), int(row[1])) in pos_pair_global]
+    for row in heldout_pos:
+        d_id, p_id = int(row[0]), int(row[1])
+        assert positive_adj[d_id, p_id].item() == 0, (
+            "val/test positive edge leaked into adjacency: (%d, %d)" % (d_id, p_id))
+        assert positive_adj[p_id, d_id].item() == 0, (
+            "val/test positive reverse edge leaked into adjacency: (%d, %d)" % (p_id, d_id))
+
+    sim = pos_transform_adj(nb_all, positive_adj, sample_type='positive', common_neibor=3)
     adj1 = positive_adj + sim
     adj1 = adj1.numpy()
     adj1 = normalize_adj(adj1 + np.eye(adj1.shape[0]))
     adj1 = torch.FloatTensor(adj1)
 
-    return drug_set, protein_set, adj1, label_pos, train_mask, test_mask,edge
+    return drug_set, protein_set, adj1, label_pos, train_mask, val_mask, test_mask, edge
 
 def pos_transform_adj(node_num, adj, sample_type='positive',common_neibor=3):
     # neighbor_mask = (adj.repeat(1, node_num).view(node_num * node_num, -1) + adj.repeat(node_num, 1))  # n^2, n

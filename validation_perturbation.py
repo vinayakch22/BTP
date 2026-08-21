@@ -16,6 +16,7 @@ Method:
      embedding change than random-K masking.
 
 Statistical Test: Paired t-test (top-K drop vs random-K drop per sample).
+Re-run explainability after the leakage-fixed retraining; old all_results.pt files are invalid.
 =================================================================
 """
 
